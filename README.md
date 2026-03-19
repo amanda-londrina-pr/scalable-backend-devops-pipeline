@@ -29,13 +29,15 @@ After merge, the pipeline automatically deploys the updated version.
 Infrastructure provisioning and environment setup are automated using Ansible playbooks, 
 ensuring consistency across environments.
 
+## How to Run
+
+[Click here and verify how to run this project.](/docs/how_to_run.md)
+
 ## How to Play
 
-1. Create a GitHub Issue.
-2. Assign issue to me.
-3. On GitHub Issue Page: create branch (feature/bugfix/release/docs/hotfix).
-4. Implement changes on new branch.
-5. Commit and create PR.
-6. Review PR.
-7. Merge on `develop` branch.
+[Click here and verify the process of develop](/docs/how_to_play.md)
+
+## About Python Tools
+
+[Click here and read about the python tools](/docs/python_tools.md)
 
