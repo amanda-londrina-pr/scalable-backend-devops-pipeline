@@ -8,6 +8,15 @@ Ele cria ambientes virtuais para cada ferramenta (como black, poetry, ruff), evi
 
 Use pipx quando precisar de ferramentas CLI sem poluir o ambiente global. 
 
+### How To Install
+
+Execute on linux (deb distributions):
+
+```bash
+sudo apt update
+sudo apt install pipx   
+```
+
 
 
 ## PYENV
@@ -39,4 +48,28 @@ pyenv local 3.14
 
 Ele lida com pyproject.toml, poetry.lock e cria ambientes isolados automaticamente. 
 
-Use Poetry para desenvolver projetos Python com dependências bem definidas e controle de versão. 
+Use Poetry para desenvolver projetos Python com dependências bem definidas e controle de versão.
+
+Some commands are:
+
+```bash
+pipx install poetry
+pipx install poetry==1.8.4
+
+pipx upgrade poetry
+pipx uninstall poetry
+
+poetry completions bash >> ~/.bash_completion
+poetry shell
+```
+
+Everyday use:
+
+
+```bash
+poetry install
+poetry run dev
+poetry run black
+poetry run isort
+poetry run flake8
+```

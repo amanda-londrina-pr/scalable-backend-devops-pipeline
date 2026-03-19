@@ -3,8 +3,8 @@
 
 ## Description
 
-This project demonstrates the design of a backend system with a complete DevOps pipeline, 
-including CI/CD automation, containerization and infrastructure provisioning using Ansible.
+This project demonstrates the design of a backend application using FastAPI, combined with DevOps practices 
+such as CI/CD automation, containerization and infrastructure provisioning using Ansible.
 
 ## Technologies
 
