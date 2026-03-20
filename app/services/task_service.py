@@ -23,12 +23,20 @@ async def get_by_id(task_id: int) -> Optional[Task]:
 async def update(task_id: int, data: dict) -> Optional[Task]:
     try:
         task = await Task.filter(id=task_id).first()
+        task.title = data.get("title", task.title)
+        task.description = data.get("description", task.description)
+        task.completed = data.get("completed", task.completed)
+
+        await task.save()
+        return task
     except DoesNotExist:
         return None
 
-    task.title = data.get("title", task.title)
-    task.description = data.get("description", task.description)
-    task.completed = data.get("completed", task.completed)
 
-    await task.save()
-    return task
+async def delete_by_id(task_id: int) -> bool:
+    try:
+        task = await Task.filter(id=task_id).first()
+        await task.delete()
+        return True
+    except DoesNotExist:
+        return False
