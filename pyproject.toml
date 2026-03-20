@@ -19,6 +19,7 @@ pydantic = "^2.12.5"
 pydantic-settings = "^2.13.1"
 tortoise-orm = "^1.1.6"
 httpx = "^0.28.1"
+fastapi-pagination = {extras = ["tortoise"], version = "^0.15.11"}
 
 
 [tool.fastapi]

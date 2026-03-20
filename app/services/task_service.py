@@ -1,5 +1,8 @@
-from typing import List, Optional
+from typing import Optional
 
+from fastapi_pagination import Page
+from fastapi_pagination import Params
+from fastapi_pagination.ext.tortoise import apaginate as tortoise_paginate
 from tortoise.exceptions import DoesNotExist
 
 from app.models.task_model import Task
@@ -9,8 +12,8 @@ async def create(data) -> Task:
     return await Task.create(**data.dict())
 
 
-async def list_all() -> List[Task]:
-    return await Task.all()
+async def list_all(page: int, size: int) -> Page[Task]:
+    return await tortoise_paginate(Task, Params(page=page, size=size))
 
 
 async def get_by_id(task_id: int) -> Optional[Task]:
