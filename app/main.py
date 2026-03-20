@@ -1,9 +1,9 @@
 # app.main.py
-
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.contrib.fastapi import tortoise_exception_handlers
@@ -36,3 +36,8 @@ app = FastAPI(
 @app.get("/")
 async def root():
     return {"message": "FastAPI with Tortoise ORM running!"}
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return FileResponse("static/favicon.ico")
