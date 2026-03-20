@@ -11,7 +11,7 @@ from tortoise.contrib.test import tortoise_test_context
 async def db():
     """Provide isolated database context for each test."""
     db_url = os.getenv("TORTOISE_TEST_DB", "sqlite://:memory:")
-    async with tortoise_test_context(["app.models"], db_url=db_url) as ctx:
+    async with tortoise_test_context(["app.models.task_model"], db_url=db_url) as ctx:
         yield ctx
 
 
