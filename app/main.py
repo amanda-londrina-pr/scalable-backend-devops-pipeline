@@ -8,6 +8,7 @@ from tortoise import Tortoise
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.contrib.fastapi import tortoise_exception_handlers
 
+from app.api.v1.task_router import router as task_router
 from app.core.settings import settings
 
 
@@ -31,6 +32,8 @@ app = FastAPI(
     lifespan=lifespan,
     exception_handlers=tortoise_exception_handlers(),
 )
+
+app.include_router(task_router)
 
 
 @app.get("/")
