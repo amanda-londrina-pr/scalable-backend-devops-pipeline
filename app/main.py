@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi_pagination import add_pagination
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import tortoise_exception_handlers
 
@@ -30,6 +31,7 @@ app = FastAPI(
 )
 
 app.include_router(task_router)
+add_pagination(app)
 
 
 @app.get("/")

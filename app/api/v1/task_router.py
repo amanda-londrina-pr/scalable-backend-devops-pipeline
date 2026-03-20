@@ -1,15 +1,20 @@
 # app.api.v1.task_router.py
 from fastapi import APIRouter, HTTPException
+from fastapi import Query
+from fastapi_pagination import Page
 
-from app.schemas.task_schema import TaskCreate, TaskUpdate
+from app.schemas.task_schema import TaskCreate, TaskUpdate, TaskBase
 from app.services import task_service
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 
-@router.get("/")
-async def list_all():
-    return await task_service.list_all()
+@router.get("/tasks", response_model=Page[TaskBase])
+async def list_all(
+        page: int = Query(1, ge=1),
+        size: int = Query(5, ge=2, le=100)
+):
+    return await task_service.list_all(page, size)
 
 
 @router.post("/")

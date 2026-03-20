@@ -7,6 +7,9 @@ from pydantic import BaseModel
 class TaskBase(BaseModel):
     description: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
 
 class TaskCreate(TaskBase):
     title: str
