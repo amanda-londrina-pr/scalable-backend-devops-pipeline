@@ -1,31 +1,38 @@
 # app.main.py
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from tortoise import Tortoise
+from tortoise.contrib.fastapi import register_tortoise
+from tortoise.contrib.fastapi import tortoise_exception_handlers
 
 from app.core.settings import settings
 
-app = FastAPI(title=settings.PROJECT_NAME)
 
-
-# app.include_router(task_routes)
-
-# Initialize Tortoise-ORM
-async def init_db():
-    await Tortoise.init(
-        db_url=settings.database_url,
-        modules={'models': ['app.models']}  # Point to your models module
+@asynccontextmanager
+async def lifespan(my_app: FastAPI) -> AsyncGenerator[None, None]:
+    # Initialize Tortoise ORM
+    register_tortoise(
+        app=my_app,
+        db_url="sqlite://:memory:",
+        modules={"models": ["models"]},
+        generate_schemas=True,
+        add_exception_handlers=True,
     )
-    await Tortoise.generate_schemas()
+    yield  # Application runs here
+    # Cleanup: Close database connections
+    await Tortoise.close_connections()
 
 
-# Startup event
-@app.on_event("startup")
-async def startup():
-    await init_db()
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    lifespan=lifespan,
+    exception_handlers=tortoise_exception_handlers(),
+)
 
 
-# Health check endpoint
 @app.get("/")
-def read_root():
-    return {"message": "FastAPI is running!"}
+async def root():
+    return {"message": "FastAPI with Tortoise ORM running!"}
