@@ -26,8 +26,8 @@ class TaskCreate(TaskBase):
 
 
 class TaskUpdate(TaskBase):
-    title: Optional[str] = Field(None, min_length=3, max_length=255)
-    description: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=3, max_length=200)
+    description: Optional[str] = Field(None, min_length=5, max_length=500)
     status: Optional[TaskStatus] = None
 
 
