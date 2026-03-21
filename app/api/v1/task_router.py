@@ -18,7 +18,6 @@ async def list_paginated(
 ):
     tasks, total, total_pages = await task_service.list_paginated(page, size)
     result = TaskPage(
-        # data=[TaskResponse.from_orm(t) for t in tasks],
         data=[TaskResponse.model_validate(t) for t in tasks],
         total=total,
         page=page,
