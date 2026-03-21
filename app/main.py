@@ -2,13 +2,22 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from tortoise import Tortoise
 from tortoise.contrib.fastapi import tortoise_exception_handlers
 
 from app.api.v1.task_router import router as task_router
+from app.core.exceptions import (
+    global_exception_handler,
+    http_exception_handler,
+    validation_exception_handler)
+from app.core.logging import setup_logging
+from app.core.middleware import logging_middleware
 from app.core.settings import settings
+
+setup_logging()
 
 
 @asynccontextmanager
@@ -30,6 +39,10 @@ app = FastAPI(
 )
 
 app.include_router(task_router)
+app.middleware("http")(logging_middleware)
+app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 @app.get("/")
