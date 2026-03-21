@@ -1,7 +1,11 @@
 from typing import Optional
 
+import structlog
+
 from app.models.task_model import Task
 from app.schemas.task_schema import TaskCreateInput, TaskUpdateInput
+
+logger = structlog.get_logger()
 
 
 async def create(data: TaskCreateInput) -> Task:
@@ -29,12 +33,14 @@ async def get_by_id(task_id: int) -> Optional[Task]:
 async def update(task_id: int, data: TaskUpdateInput) -> Optional[Task]:
     task = await Task.filter(id=task_id).first()
     if not task:
+        logger.info("task_update", task_id=task_id)
         return None
 
     for field, value in data.to_orm().items():
         setattr(task, field, value)
 
-    return await task.save()
+    await task.save()
+    return task
 
 
 async def delete_by_id(task_id: int) -> bool:

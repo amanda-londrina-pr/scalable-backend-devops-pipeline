@@ -667,6 +667,18 @@ anyio = ">=3.6.2,<5"
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
 
 [[package]]
+name = "structlog"
+version = "25.5.0"
+description = "Structured Logging for Python"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "structlog-25.5.0-py3-none-any.whl", hash = "sha256:a8453e9b9e636ec59bd9e79bbd4a72f025981b3ba0f5837aebf48f02f37a7f9f"},
+    {file = "structlog-25.5.0.tar.gz", hash = "sha256:098522a3bebed9153d4570c6d0288abf80a031dfdb2048d59a49e9dc2190fc98"},
+]
+
+[[package]]
 name = "tortoise-orm"
 version = "1.1.6"
 description = "Easy async ORM for python, built with relations in mind"
@@ -1008,4 +1020,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14"
-content-hash = "ebf58e72d98697446750ede2bc8a896090e295229a97c5d0b7d74752ee2f516b"
+content-hash = "8ff07051ec9bab67b7bf2c84540a20b08a74a22581ab999d9a3514546ab753a3"
