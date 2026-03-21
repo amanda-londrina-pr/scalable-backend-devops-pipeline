@@ -1,54 +1,42 @@
 from typing import Optional
 
-from tortoise.exceptions import DoesNotExist
-
-from app.models.task_model import Task, TaskPage
-
-
-async def create(data) -> Task:
-    return await Task.create(**data.dict())
+from app.models.task_model import Task
+from app.schemas.task_schema import TaskCreateInput, TaskUpdateInput
 
 
-async def list_all(page: int, size: int) -> TaskPage:
+async def create(data: TaskCreateInput) -> Task:
+    return await Task.create(**data.to_orm())
+
+
+async def list_paginated(page: int, size: int):
+    # Parameters validation:
+    page = max(page, 1)
+    size = max(size, 1)
+
     query = Task.all()
     total = await query.count()
     offset = (page - 1) * size
-    tasks = query.offset(offset).limit(size)
+    tasks = await query.offset(offset).limit(size)
     total_pages = (total + size - 1) // size
 
-    return TaskPage(
-        data=tasks,
-        total=total,
-        page=page,
-        page_size=size,
-        total_pages=total_pages,
-    )
+    return tasks, total, total_pages
 
 
 async def get_by_id(task_id: int) -> Optional[Task]:
-    try:
-        return await Task.filter(id=task_id).first()
-    except DoesNotExist:
+    return await Task.filter(id=task_id).first()
+
+
+async def update(task_id: int, data: TaskUpdateInput) -> Optional[Task]:
+    task = await Task.filter(id=task_id).first()
+    if not task:
         return None
 
+    for field, value in data.to_orm().items():
+        setattr(task, field, value)
 
-async def update(task_id: int, data: dict) -> Optional[Task]:
-    try:
-        task = await Task.filter(id=task_id).first()
-        task.title = data.get("title", task.title)
-        task.description = data.get("description", task.description)
-        task.completed = data.get("completed", task.completed)
-
-        await task.save()
-        return task
-    except DoesNotExist:
-        return None
+    return await task.save()
 
 
 async def delete_by_id(task_id: int) -> bool:
-    try:
-        task = await Task.filter(id=task_id).first()
-        await task.delete()
-        return True
-    except DoesNotExist:
-        return False
+    deleted_count = await Task.filter(id=task_id).delete()
+    return deleted_count > 0
