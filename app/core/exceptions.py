@@ -37,7 +37,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail},
+        content=build_error(
+            code="HTTP_ERROR",
+            message=exc.detail,
+        ),
     )
 
 
@@ -45,7 +48,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(
         "unhandled_exception",
         error=str(exc),
-        path=request.url.path,
+        error_type=type(exc).__name__,
     )
 
     return JSONResponse(
