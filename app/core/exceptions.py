@@ -3,60 +3,89 @@ from fastapi import Request, HTTPException
 from fastapi import status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from structlog.contextvars import get_contextvars
 
-from app.core.errors import build_error
+from app.domain.error_codes import ErrorCode
+from app.domain.errors import build_error, DomainError
 
 logger = structlog.get_logger()
 
 
+def get_request_id():
+    context = get_contextvars()
+    return context.get("request_id")
+
+
+def get_status_code(code: ErrorCode) -> int:
+    if code == ErrorCode.TASK_NOT_FOUND:
+        return status.HTTP_404_NOT_FOUND
+
+    return status.HTTP_400_BAD_REQUEST
+
+
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.warning(
-        "validation_error",
-        errors=exc.errors(),
-        path=request.url.path,
-    )
+    request_id = get_request_id()
 
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=build_error(
-            code="VALIDATION_ERROR",
-            message="Invalid request data",
+            code=ErrorCode.VALIDATION_ERROR,
+            message="Invalid request data!",
+            request_id=request_id,
             details={"errors": exc.errors()},
         ),
     )
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
-    logger.warning(
-        "http_exception",
-        status_code=exc.status_code,
-        detail=exc.detail,
-        path=request.url.path,
-        method=request.method,
-    )
+    request_id = get_request_id()
 
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail},
+        content=build_error(
+            code=ErrorCode.DOMAIN_ERROR,
+            message=exc.detail,
+            request_id=request_id,
+        ),
     )
 
 
 async def global_exception_handler(request: Request, exc: Exception):
+    request_id = get_request_id()
+
     logger.exception(
         "unhandled_exception",
         error=str(exc),
+        request_id=request_id,
         path=request.url.path,
     )
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=build_error(
-            code="INTERNAL_SERVER_ERROR",
-            message="Something went wrong",
+            code=ErrorCode.INTERNAL_ERROR,
+            message="Something went wrong!",
+            request_id=request_id,
         ),
     )
 
 
-class NotFoundError(HTTPException):
-    def __init__(self, message="Resource not found"):
-        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+async def domain_exception_handler(request: Request, exc: DomainError):
+    request_id = get_request_id()
+
+    logger.warning(
+        "domain_error",
+        error=str(exc),
+        code=exc.code,
+        request_id=request_id,
+        path=request.url.path,
+    )
+
+    return JSONResponse(
+        status_code=get_status_code(exc.code),
+        content=build_error(
+            code=exc.code,
+            message=exc.message,
+            request_id=request_id,
+        ),
+    )

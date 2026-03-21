@@ -1,6 +1,7 @@
 # app.api.v1.task_router.py
+
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi import Query
 from fastapi import Response, status
 
@@ -42,14 +43,7 @@ async def create(data: TaskCreate):
 @router.get("/{task_id}", response_model=TaskResponse)
 async def get_task(task_id: int):
     task = await task_service.get_by_id(task_id)
-
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Task not found!")
-    result = to_response(task)
-
-    logger.info("task_get_success", task_id=task_id)
-    return result
+    return to_response(task)
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
@@ -64,10 +58,5 @@ async def update(task_id: int, data: TaskUpdate):
 @router.delete("/{task_id}", response_model=None,
                status_code=status.HTTP_204_NO_CONTENT)
 async def delete(task_id: int):
-    success = await task_service.delete_by_id(task_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Task not found!")
-
-    logger.info("task_delete_success", task_id=task_id)
+    await task_service.delete_by_id(task_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

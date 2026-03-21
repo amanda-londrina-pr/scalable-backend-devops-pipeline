@@ -30,11 +30,12 @@ async def logging_middleware(request: Request, call_next):
             "http_request",
             status_code=response.status_code,
             duration=duration,
+            query_params=str(request.query_params),
         )
 
         return response
 
-    except Exception as e:
+    except Exception:
         duration = time.time() - start_time
 
         logger.exception(

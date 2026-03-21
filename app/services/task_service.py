@@ -2,8 +2,8 @@ from typing import Optional
 
 import structlog
 
-from app.core.exceptions import NotFoundError
 from app.domain.enums.task_status import TaskStatus
+from app.domain.errors import NotFoundError
 from app.models.task_model import Task
 from app.schemas.task_schema import TaskCreate, TaskUpdate
 
@@ -40,11 +40,14 @@ async def list_paginated(page: int, size: int):
     return tasks, total, total_pages
 
 
-async def get_by_id(task_id: int) -> Optional[Task]:
+async def get_by_id(task_id: int) -> Task:
     logger.info("service_get", task_id=task_id)
-    result = await Task.filter(id=task_id).first()
-    logger.info("service_get_success", task_id=task_id, result=result)
-    return result
+    task = await Task.filter(id=task_id).first()
+    if not task:
+        raise NotFoundError("Task not found!")
+
+    logger.info("service_get_success", task_id=task_id, result=task)
+    return task
 
 
 async def update(task_id: int, data: TaskUpdate) -> Optional[Task]:
@@ -62,9 +65,11 @@ async def update(task_id: int, data: TaskUpdate) -> Optional[Task]:
     return task
 
 
-async def delete_by_id(task_id: int) -> bool:
+async def delete_by_id(task_id: int) -> None:
     logger.info("service_delete", task_id=task_id)
     deleted_count = await Task.filter(id=task_id).delete()
-    result = deleted_count > 0
-    logger.info("service_delete_success", task_id=task_id, result=result)
-    return result
+
+    if deleted_count == 0:
+        raise NotFoundError("Task not found!")
+
+    logger.info("service_delete_success", task_id=task_id)
