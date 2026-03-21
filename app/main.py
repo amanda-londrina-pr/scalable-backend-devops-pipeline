@@ -13,11 +13,8 @@ from app.core.exceptions import (
     global_exception_handler,
     http_exception_handler,
     validation_exception_handler)
-from app.core.logging import setup_logging
 from app.core.middleware import logging_middleware
 from app.core.settings import settings
-
-setup_logging()
 
 
 @asynccontextmanager

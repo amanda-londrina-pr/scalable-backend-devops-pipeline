@@ -5,6 +5,8 @@ import structlog
 from fastapi import Request
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
+from app.core.settings import settings
+
 logger = structlog.get_logger()
 
 
@@ -12,8 +14,8 @@ async def logging_middleware(request: Request, call_next):
     clear_contextvars()
     request_id = str(uuid.uuid4())
     bind_contextvars(
-        env="dev",
-        service="scalable-backend-devops-pipeline",
+        env=settings.ENV,
+        service=settings.PROJECT_NAME,
         request_id=request_id,
         path=request.url.path,
         method=request.method,
