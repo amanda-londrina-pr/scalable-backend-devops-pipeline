@@ -21,7 +21,7 @@ from app.domain.errors import DomainError
 @asynccontextmanager
 async def lifespan(my_app: FastAPI) -> AsyncGenerator[None, None]:
     await Tortoise.init(
-        db_url="sqlite://:memory:",
+        db_url=settings.DATABASE_URL,
         modules={'models': ['app.models.task_model']},
         _enable_global_fallback=True
     )
