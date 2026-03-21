@@ -4,7 +4,7 @@ from fastapi import status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.core.errors import build_error
+from app.domain.errors import build_error, DomainError, NotFoundError
 
 logger = structlog.get_logger()
 
@@ -57,6 +57,26 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-class NotFoundError(HTTPException):
-    def __init__(self, message="Resource not found"):
-        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+async def domain_exception_handler(request: Request, exc: DomainError):
+    logger.warning(
+        "domain_error",
+        error=str(exc),
+        path=request.url.path,
+    )
+
+    if isinstance(exc, NotFoundError):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=build_error(
+                code="NOT_FOUND",
+                message=exc.message,
+            ),
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=build_error(
+            code="DOMAIN_ERROR",
+            message=str(exc),
+        ),
+    )

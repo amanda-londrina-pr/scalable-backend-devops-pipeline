@@ -12,9 +12,10 @@ from app.api.v1.task_router import router as task_router
 from app.core.exceptions import (
     global_exception_handler,
     http_exception_handler,
-    validation_exception_handler)
+    validation_exception_handler, domain_exception_handler)
 from app.core.middleware import logging_middleware
 from app.core.settings import settings
+from app.domain.errors import DomainError
 
 
 @asynccontextmanager
@@ -38,6 +39,7 @@ app = FastAPI(
 app.include_router(task_router)
 app.middleware("http")(logging_middleware)
 app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(DomainError, domain_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
