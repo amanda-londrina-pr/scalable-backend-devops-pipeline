@@ -2,8 +2,8 @@ from typing import Optional
 
 import structlog
 
-from app.core.exceptions import NotFoundError
 from app.domain.enums.task_status import TaskStatus
+from app.domain.errors import NotFoundError
 from app.models.task_model import Task
 from app.schemas.task_schema import TaskCreate, TaskUpdate
 
