@@ -1,14 +1,17 @@
-from typing import List
-from typing import Optional
+# app/schemas/task_schema.py
 
-from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional, List
+
+from pydantic import BaseModel, Field
 from tortoise.contrib.pydantic import pydantic_model_creator
 
+from app.domain.enums.task_status import TaskStatus
 from app.models.task_model import Task
 
 
-# Pydantic Schema
 class TaskBase(BaseModel):
+    title: str = Field(..., min_length=3, max_length=255)
     description: Optional[str] = None
 
     def to_orm(self):
@@ -18,21 +21,32 @@ class TaskBase(BaseModel):
         from_attributes = True
 
 
-class TaskCreateInput(TaskBase):
-    title: str
+class TaskCreate(TaskBase):
+    pass
 
 
-class TaskUpdateInput(TaskBase):
-    title: Optional[str] = None
-    completed: Optional[bool] = None
+class TaskUpdate(TaskBase):
+    title: Optional[str] = Field(None, min_length=3, max_length=255)
+    description: Optional[str] = None
+    status: Optional[TaskStatus] = None
 
 
-class TaskPageOutput(BaseModel):
-    data: List[TaskSchemaOutput]
+class TaskPage(BaseModel):
+    data: List[TaskSchema]
     total: int
     page: int
     page_size: int
     total_pages: int
 
 
-TaskSchemaOutput = pydantic_model_creator(Task)
+class TaskResponse(TaskBase):
+    id: int
+    status: TaskStatus
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+TaskSchema = pydantic_model_creator(Task)
