@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi import Query
 from fastapi import Response, status
 
+from app.mappers.task_mapper import to_response, to_response_list
 from app.schemas.task_schema import TaskPage, TaskCreate, TaskUpdate, TaskResponse
 from app.services import task_service
 
@@ -18,7 +19,7 @@ async def list_paginated(
 ):
     tasks, total, total_pages = await task_service.list_paginated(page, size)
     result = TaskPage(
-        data=[TaskResponse.model_validate(t) for t in tasks],
+        data=to_response_list(tasks),
         total=total,
         page=page,
         page_size=size,
@@ -32,7 +33,7 @@ async def list_paginated(
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=TaskResponse)
 async def create(data: TaskCreate):
     task = await task_service.create(data)
-    result = TaskResponse.model_validate(task)
+    result = to_response(task)
 
     logger.info("task_create_success", task_id=task.id)
     return result
@@ -45,7 +46,7 @@ async def get_task(task_id: int):
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Task not found!")
-    result = TaskResponse.model_validate(task)
+    result = to_response(task)
 
     logger.info("task_get_success", task_id=task_id)
     return result
@@ -54,7 +55,7 @@ async def get_task(task_id: int):
 @router.put("/{task_id}", response_model=TaskResponse)
 async def update(task_id: int, data: TaskUpdate):
     task = await task_service.update(task_id, data)
-    result = TaskResponse.model_validate(task)
+    result = to_response(task)
 
     logger.info("task_update_success", task_id=task_id)
     return result
