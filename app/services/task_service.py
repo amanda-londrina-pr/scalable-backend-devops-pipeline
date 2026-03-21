@@ -2,14 +2,18 @@ from typing import Optional
 
 import structlog
 
+from app.domain.enums.task_status import TaskStatus
 from app.models.task_model import Task
-from app.schemas.task_schema import TaskCreateInput, TaskUpdateInput
+from app.schemas.task_schema import TaskCreate, TaskUpdate
 
 logger = structlog.get_logger()
 
 
-async def create(data: TaskCreateInput) -> Task:
-    return await Task.create(**data.to_orm())
+async def create(data: TaskCreate) -> Task:
+    return await Task.create(
+        **data.to_orm(),
+        status=TaskStatus.PENDING
+    )
 
 
 async def list_paginated(page: int, size: int):
@@ -30,7 +34,7 @@ async def get_by_id(task_id: int) -> Optional[Task]:
     return await Task.filter(id=task_id).first()
 
 
-async def update(task_id: int, data: TaskUpdateInput) -> Optional[Task]:
+async def update(task_id: int, data: TaskUpdate) -> Optional[Task]:
     task = await Task.filter(id=task_id).first()
     if not task:
         logger.info("task_update", task_id=task_id)
@@ -39,6 +43,7 @@ async def update(task_id: int, data: TaskUpdateInput) -> Optional[Task]:
     for field, value in data.to_orm().items():
         setattr(task, field, value)
 
+    task.status = TaskStatus.DONE
     await task.save()
     return task
 
