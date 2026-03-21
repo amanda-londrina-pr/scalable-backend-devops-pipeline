@@ -31,7 +31,7 @@ class TaskUpdate(TaskBase):
     status: Optional[TaskStatus] = None
 
 
-class TaskResponse(BaseSchema):
+class TaskResponse(TaskBase):
     id: int
     status: TaskStatus
     created_at: datetime
