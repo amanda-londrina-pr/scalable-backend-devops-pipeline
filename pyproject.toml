@@ -20,6 +20,7 @@ pydantic-settings = "^2.13.1"
 tortoise-orm = "^1.1.6"
 httpx = "^0.28.1"
 structlog = "^25.5.0"
+faker = "^40.11.0"
 
 
 [tool.fastapi]
@@ -37,3 +38,9 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::tortoise.warnings.TortoiseLoopSwitchWarning"
+]
+
+[tool.poetry.scripts]
+seed = "app.scripts.run_seed:run"
