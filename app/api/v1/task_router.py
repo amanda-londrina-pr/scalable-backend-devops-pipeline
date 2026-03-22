@@ -14,7 +14,7 @@ logger = structlog.get_logger()
 
 
 @router.get("/", response_model=TaskPage)
-async def list_paginated(
+async def list_paginated_endpoint(
         page: int = Query(1, ge=1),
         size: int = Query(5, ge=1, le=100)
 ):
@@ -32,7 +32,7 @@ async def list_paginated(
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=TaskResponse)
-async def create(data: TaskCreate):
+async def create_endpoint(data: TaskCreate):
     task = await task_service.create(data)
     result = to_response(task)
 
@@ -41,13 +41,13 @@ async def create(data: TaskCreate):
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-async def get_task(task_id: int):
+async def get_task_endpoint(task_id: int):
     task = await task_service.get_by_id(task_id)
     return to_response(task)
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
-async def update(task_id: int, data: TaskUpdate):
+async def update_endpoint(task_id: int, data: TaskUpdate):
     task = await task_service.update(task_id, data)
     result = to_response(task)
 
@@ -57,6 +57,31 @@ async def update(task_id: int, data: TaskUpdate):
 
 @router.delete("/{task_id}", response_model=None,
                status_code=status.HTTP_204_NO_CONTENT)
-async def delete(task_id: int):
+async def delete_endpoint(task_id: int):
     await task_service.delete_by_id(task_id)
+    logger.info("task_delete_success", task_id=task_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch(
+    "/{task_id}/complete",
+    response_model=TaskResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def complete_task_endpoint(task_id: int):
+    task = await task_service.complete_task(task_id)
+    result = to_response(task)
+    logger.info("complete_task_success", task_id=task_id, status=str(task.status))
+    return result
+
+
+@router.patch(
+    "/{task_id}/reopen",
+    response_model=TaskResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def reopen_task_endpoint(task_id: int):
+    task = await task_service.reopen_task(task_id)
+    response = to_response(task)
+    logger.info("reopen_task_success", task_id=task_id, status=str(task.status))
+    return response

@@ -26,3 +26,10 @@ class DomainError(Exception):
 class NotFoundError(DomainError):
     def __init__(self, message: str = "Resource not found!"):
         super().__init__(message, code=ErrorCode.TASK_NOT_FOUND)
+
+
+class EmptyUpdateError(DomainError):
+    pass
+
+class InvalidStatusTransitionError(DomainError):
+    pass
