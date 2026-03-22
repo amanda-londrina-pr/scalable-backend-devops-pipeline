@@ -5,12 +5,14 @@ import structlog
 from fastapi import Request
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
-from app.core.settings import settings
+from app.core.settings import get_settings
 
 logger = structlog.get_logger()
 
 
 async def logging_middleware(request: Request, call_next):
+    settings = get_settings()
+
     clear_contextvars()
     request_id = str(uuid.uuid4())
     bind_contextvars(
@@ -37,10 +39,5 @@ async def logging_middleware(request: Request, call_next):
 
     except Exception:
         duration = time.time() - start_time
-
-        logger.exception(
-            "http_request_failed",
-            duration=duration,
-        )
-
+        logger.exception("http_request_failed", duration=duration)
         raise
