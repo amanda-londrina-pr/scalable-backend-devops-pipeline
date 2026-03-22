@@ -400,3 +400,10 @@ async def test_reopen_task_invalid_transition(mock_task):
         await task_service.reopen_task(1)
 
     assert "Invalid status transition" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_complete_task_success_integration(task_factory):
+    task = await task_factory(status=TaskStatus.PENDING)
+    result = await task_service.complete_task(task.id)
+    assert result.status == TaskStatus.DONE

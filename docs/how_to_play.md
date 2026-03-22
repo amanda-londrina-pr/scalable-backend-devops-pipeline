@@ -12,7 +12,20 @@
 
 ## Test
 
-
 ```bash
+rm -rf .pytest_cache
 poetry run pytest
 ```
+
+## Seed
+
+We can populate the database running:
+
+```bash
+poetry run seed 50
+```
+
+But, in development it is automaticaly during app startup.
+
+
+

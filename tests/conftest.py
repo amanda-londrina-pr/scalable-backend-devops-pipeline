@@ -1,21 +1,53 @@
-import os
-
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient
+from faker import Faker
+from httpx import AsyncClient, ASGITransport
 from tortoise.contrib.test import tortoise_test_context
 
+from app.core.settings import TestSettings
+from app.domain.enums.task_status import TaskStatus
+from app.main import app
+from app.models.task_model import Task
 
-# @pytest.fixture(
-@pytest_asyncio.fixture(scope="session", autouse=True)
+fake = Faker()
+
+
+@pytest_asyncio.fixture(autouse=True)
 async def db():
-    """Provide isolated database context for each test."""
-    db_url = os.getenv("TORTOISE_TEST_DB", "sqlite://:memory:")
-    async with tortoise_test_context(["app.models.task_model"], db_url=db_url) as ctx:
-        yield ctx
+    settings = TestSettings()
+
+    async with tortoise_test_context(settings.APP_MODELS):
+        yield
 
 
 @pytest_asyncio.fixture
-async def async_client() -> AsyncClient:
-    async with AsyncClient(base_url="http://localhost:8000") as client:
+async def async_client():
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+            transport=transport,
+            base_url="http://test"
+    ) as client:
         yield client
+
+
+@pytest.fixture(autouse=True)
+def override_settings(monkeypatch):
+    def _get_test_settings():
+        return TestSettings()
+
+    monkeypatch.setattr("app.core.settings.get_settings", _get_test_settings)
+
+
+@pytest.fixture
+async def task_factory():
+    async def _create(**kwargs):
+        data = {
+            "title": fake.sentence(),
+            "description": fake.text(),
+            "status": TaskStatus.PENDING,
+            **kwargs
+        }
+        return await Task.create(**data)
+
+    return _create

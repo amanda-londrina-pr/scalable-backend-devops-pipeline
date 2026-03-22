@@ -2,6 +2,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
@@ -14,24 +15,36 @@ from app.core.exceptions import (
     http_exception_handler,
     validation_exception_handler, domain_exception_handler)
 from app.core.middleware import logging_middleware
-from app.core.settings import settings
+from app.core.settings import get_settings
 from app.domain.errors import DomainError
+from app.scripts.seed import seed_tasks
+
+logger = structlog.get_logger()
+log_level = "DEBUG" if get_settings().DEBUG else "INFO"
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(log_level)
+)
 
 
 @asynccontextmanager
 async def lifespan(my_app: FastAPI) -> AsyncGenerator[None, None]:
-    await Tortoise.init(
-        db_url=settings.DATABASE_URL,
-        modules={'models': ['app.models.task_model']},
-        _enable_global_fallback=True
-    )
+    settings = get_settings()
+
+    await Tortoise.init(config=settings.TORTOISE_ORM, _enable_global_fallback=True)
     await Tortoise.generate_schemas()
+
+    if settings.is_dev and settings.SEED_ON_START:
+        try:
+            await seed_tasks()
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning("seed_failure", exc_info=True)
+
     yield
     await Tortoise.close_connections()
 
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title=get_settings().PROJECT_NAME,
     lifespan=lifespan,
     exception_handlers=tortoise_exception_handlers(),
 )
