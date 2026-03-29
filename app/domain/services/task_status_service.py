@@ -9,6 +9,12 @@ ALLOWED_TRANSITIONS = {
 
 
 def validate_status_transition(current: TaskStatus, new: TaskStatus) -> None:
+    if not isinstance(current, TaskStatus):
+        raise TypeError(f"current must be TaskStatus, got {type(current)}")
+
+    if not isinstance(new, TaskStatus):
+        raise TypeError(f"new must be TaskStatus, got {type(new)}")
+
     allowed = ALLOWED_TRANSITIONS.get(current, [])
 
     if new not in allowed:

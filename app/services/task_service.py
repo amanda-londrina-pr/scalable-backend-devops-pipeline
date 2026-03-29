@@ -5,7 +5,7 @@ import structlog
 
 from app.domain.enums.task_status import TaskStatus
 from app.domain.errors import NotFoundError, EmptyUpdateError
-from app.domain.task_status import validate_status_transition
+from app.domain.services.task_status_service import validate_status_transition
 from app.models.task_model import Task
 from app.schemas.task_schema import TaskCreate, TaskUpdate
 
