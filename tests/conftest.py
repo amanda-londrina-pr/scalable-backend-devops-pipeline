@@ -39,15 +39,31 @@ def override_settings(monkeypatch):
     monkeypatch.setattr("app.core.settings.get_settings", _get_test_settings)
 
 
-@pytest.fixture
-async def task_factory():
+@pytest_asyncio.fixture
+async def created_task_id(async_client):
+    response = await async_client.post("/tasks/", json={
+        "title": "Test",
+        "description": "Description"
+    })
+    task_id = response.json().get("id", None)
+    yield task_id
+    await async_client.delete(f"/tasks/{task_id}")
+
+
+@pytest_asyncio.fixture
+async def completed_task_id(async_client, created_task_id):
+    await async_client.patch(f"/tasks/{created_task_id}/complete")
+    yield created_task_id
+
+
+@pytest_asyncio.fixture
+def task_factory():
     async def _create(**kwargs):
-        data = {
-            "title": fake.sentence(),
-            "description": fake.text(),
-            "status": TaskStatus.PENDING,
-            **kwargs
-        }
-        return await Task.create(**data)
+        task = await Task.create(
+            title=kwargs.get("title", fake.sentence()),
+            description=kwargs.get("description", fake.text()),
+            status=kwargs.get("status", TaskStatus.PENDING),
+        )
+        return task
 
     return _create

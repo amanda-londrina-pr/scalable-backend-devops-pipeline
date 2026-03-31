@@ -4,7 +4,7 @@ from typing import Tuple, List
 import structlog
 
 from app.domain.enums.task_status import TaskStatus
-from app.domain.errors import NotFoundError, EmptyUpdateError
+from app.domain.errors import NotFoundError, EmptyUpdateError, ConcurrencyError
 from app.domain.services.task_status_service import validate_status_transition
 from app.models.task_model import Task
 from app.schemas.task_schema import TaskCreate, TaskUpdate
@@ -83,7 +83,7 @@ async def get_by_id(task_id: int) -> Task:
 async def update(task_id: int, data: TaskUpdate) -> Optional[Task]:
     logger.info("service_update", task_id=task_id)
 
-    task = await Task.filter(id=task_id).first()
+    task = await Task.get_or_none(id=task_id)
     if not task:
         raise NotFoundError("Task not found!")
 
@@ -93,29 +93,52 @@ async def update(task_id: int, data: TaskUpdate) -> Optional[Task]:
     if not payload:
         raise EmptyUpdateError("Update payload cannot be empty!")
 
+    current_version = task.version
+
+    # apply in memory
     for field, value in payload.items():
         setattr(task, field, value)
 
-    await task.save()
+    updated = await Task.filter(
+        id=task_id,
+        version=current_version
+    ).update(
+        **payload,
+        version=current_version + 1
+    )
 
-    logger.info("service_update_success", task_id=task.id)
-    return task
+    if updated == 0:
+        raise ConcurrencyError("Concurrent update detected")
+
+    # retrieve updated version
+    updated_task = await Task.get(id=task_id)
+
+    logger.info("service_update_success", task_id=task_id, version=updated_task.version)
+    return updated_task
 
 
-async def complete_task(task_id: int) -> Task:
-    task = await Task.filter(id=task_id).first()
+async def complete_task(task_id: int):
+    task = await Task.get(id=task_id)
 
     if not task:
         raise NotFoundError("Task not found!")
 
     validate_status_transition(task.status, TaskStatus.DONE)
 
-    task.status = TaskStatus.DONE
-    await task.save()
+    updated = await Task.filter(
+        id=task_id,
+        version=task.version
+    ).update(
+        status=TaskStatus.DONE,
+        version=task.version + 1
+    )
 
-    logger.info("task_completed", task_id=task.id)
+    if updated == 0:
+        raise ConcurrencyError("Concurrent update detected!")
 
-    return task
+    updated_task = await Task.get(id=task_id)
+    logger.info("task_completed", task_id=task.id, version=updated_task.version)
+    return updated_task
 
 
 async def reopen_task(task_id: int) -> Task:

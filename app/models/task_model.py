@@ -12,6 +12,7 @@ class Task(models.Model):
     status = fields.CharEnumField(TaskStatus, default=TaskStatus.PENDING)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
+    version = fields.IntField(default=1)
 
     class Meta:
         table = "tasks"

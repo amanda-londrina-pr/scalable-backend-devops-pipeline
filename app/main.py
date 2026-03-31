@@ -16,7 +16,8 @@ from app.core.exceptions import (
     validation_exception_handler, domain_exception_handler)
 from app.core.middleware import logging_middleware
 from app.core.settings import get_settings
-from app.domain.errors import DomainError
+from app.domain.errors import DomainError, InvalidStatusTransitionError
+from app.domain.handlers.task_status_handler import invalid_transition_handler
 from app.scripts.seed import seed_tasks
 
 logger = structlog.get_logger()
@@ -55,7 +56,7 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.add_exception_handler(DomainError, domain_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
-
+app.add_exception_handler(InvalidStatusTransitionError, invalid_transition_handler)
 
 @app.get("/")
 async def root():
