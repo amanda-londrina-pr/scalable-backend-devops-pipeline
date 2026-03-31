@@ -31,5 +31,9 @@ class NotFoundError(DomainError):
 class EmptyUpdateError(DomainError):
     pass
 
+
 class InvalidStatusTransitionError(DomainError):
+    pass
+
+class ConcurrencyError(DomainError):
     pass

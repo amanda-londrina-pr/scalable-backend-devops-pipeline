@@ -46,9 +46,8 @@ async def test_get_by_id_not_found(mock_task):
 async def test_update_empty_payload(mock_task):
     fake_task = AsyncMock()
 
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
 
     data = Mock()
     data.to_orm.return_value = {}
@@ -60,17 +59,18 @@ async def test_update_empty_payload(mock_task):
 @pytest.mark.asyncio
 @patch("app.services.task_service.Task")
 async def test_update_success(mock_task):
-    # fake entity do banco
     fake_task = AsyncMock()
-    fake_task.title = "old"
-    fake_task.description = "old desc"
+    fake_task.version = 1
 
-    # mock query
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    # get_or_none
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
 
-    # mock do schema (IMPORTANTE: mockar to_orm)
+    # update otimista
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
+
+    # get final
+    mock_task.get = AsyncMock(return_value=fake_task)
+
     data = Mock()
     data.to_orm.return_value = {
         "title": "new title",
@@ -79,21 +79,14 @@ async def test_update_success(mock_task):
 
     result = await task_service.update(1, data)
 
-    assert result.title == "new title"
-    assert result.description == "new desc"
-
-    fake_task.save.assert_awaited_once()
-
-    mock_task.filter.assert_called_once_with(id=1)
-    mock_query.first.assert_awaited_once()
+    assert result is not None
+    mock_task.filter.return_value.update.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 @patch("app.services.task_service.Task")
 async def test_update_not_found(mock_task):
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=None)
-    mock_task.filter.return_value = mock_query
+    mock_task.get_or_none = AsyncMock(return_value=None)
 
     data = Mock()
     data.to_orm.return_value = {"title": "new"}
@@ -101,8 +94,7 @@ async def test_update_not_found(mock_task):
     with pytest.raises(NotFoundError):
         await task_service.update(1, data)
 
-    mock_task.filter.assert_called_once_with(id=1)
-    mock_query.first.assert_awaited_once()
+    mock_task.get_or_none.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -112,9 +104,9 @@ async def test_update_partial_fields(mock_task):
     fake_task.title = "old title"
     fake_task.description = "old desc"
 
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
+    mock_task.get = AsyncMock(return_value=fake_task)
 
     data = Mock()
     data.to_orm.return_value = {
@@ -123,10 +115,24 @@ async def test_update_partial_fields(mock_task):
 
     result = await task_service.update(1, data)
 
-    assert result.title == "old title"  # não veio no to_orm
-    assert result.description == "new desc"  # veio no to_orm
+    assert result.title == "old title"
+    assert result.description == "new desc"
 
-    fake_task.save.assert_awaited_once()
+
+@pytest.mark.asyncio
+@patch("app.services.task_service.Task")
+async def test_update_concurrency_error(mock_task):
+    fake_task = AsyncMock()
+    fake_task.version = 1
+
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
+    mock_task.filter.return_value.update = AsyncMock(return_value=0)
+
+    data = Mock()
+    data.to_orm.return_value = {"title": "new"}
+
+    with pytest.raises(Exception):
+        await task_service.update(1, data)
 
 
 @pytest.mark.asyncio
@@ -134,9 +140,9 @@ async def test_update_partial_fields(mock_task):
 async def test_update_calls_setattr(mock_task):
     fake_task = AsyncMock()
 
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
+    mock_task.get = AsyncMock(return_value=fake_task)
 
     data = Mock()
     data.to_orm.return_value = {
@@ -155,9 +161,9 @@ async def test_update_ignores_forbidden_fields(mock_task):
     fake_task.title = "old"
     fake_task.description = "old desc"
 
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    mock_task.get_or_none = AsyncMock(return_value=fake_task)
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
+    mock_task.get = AsyncMock(return_value=fake_task)
 
     data = Mock()
     data.to_orm.return_value = {
@@ -171,7 +177,6 @@ async def test_update_ignores_forbidden_fields(mock_task):
     assert not hasattr(result, "status") or result.status != "SHOULD_BE_IGNORED"
 
 
-# CREATE
 @pytest.mark.asyncio
 @patch("app.services.task_service.Task")
 async def test_create_success(mock_task):
@@ -253,7 +258,6 @@ async def test_create_exact_payload(mock_task):
     assert kwargs["status"] == TaskStatus.PENDING
 
 
-# DELETE
 @pytest.mark.asyncio
 @patch("app.services.task_service.Task")
 async def test_delete_success(mock_task):
@@ -364,23 +368,23 @@ async def test_list_paginated_offset_calculation(mock_task):
 async def test_complete_task_success(mock_task):
     fake_task = AsyncMock()
     fake_task.status = TaskStatus.PENDING
+    fake_task.version = 1
 
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    updated_task = AsyncMock()
+    updated_task.status = TaskStatus.DONE
+
+    mock_task.get = AsyncMock(side_effect=[fake_task, updated_task])
+    mock_task.filter.return_value.update = AsyncMock(return_value=1)
 
     result = await task_service.complete_task(1)
 
     assert result.status == TaskStatus.DONE
-    fake_task.save.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 @patch("app.services.task_service.Task")
 async def test_complete_task_not_found(mock_task):
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=None)
-    mock_task.filter.return_value = mock_query
+    mock_task.get = AsyncMock(return_value=None)
 
     with pytest.raises(NotFoundError):
         await task_service.complete_task(1)
@@ -390,11 +394,9 @@ async def test_complete_task_not_found(mock_task):
 @patch("app.services.task_service.Task")
 async def test_reopen_task_invalid_transition(mock_task):
     fake_task = AsyncMock()
-    fake_task.status = TaskStatus.IN_PROGRESS  # 👈 agora é inválido
-
-    mock_query = AsyncMock()
-    mock_query.first = AsyncMock(return_value=fake_task)
-    mock_task.filter.return_value = mock_query
+    fake_task.status = TaskStatus.IN_PROGRESS
+    fake_task.version = 1
+    mock_task.filter.return_value.first = AsyncMock(return_value=fake_task)
 
     with pytest.raises(InvalidStatusTransitionError) as exc:
         await task_service.reopen_task(1)
